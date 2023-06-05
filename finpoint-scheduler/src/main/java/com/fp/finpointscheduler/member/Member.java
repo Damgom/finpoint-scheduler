@@ -32,6 +32,7 @@ public class Member {
     private String fintech_use_num;
 
     private Long finPoint;
+
     private Long targetSpend;
     public void assignCode(String code) {
         this.code = code;

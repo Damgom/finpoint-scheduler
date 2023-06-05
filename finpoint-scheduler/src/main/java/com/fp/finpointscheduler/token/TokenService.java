@@ -51,8 +51,19 @@ public class TokenService {
                             "D",
                             getCurDate());
             calculation(transactionResponseDto, member);
-            //todo 계산돼 나온 finpoint 다시 set
         }
+    }
+
+    @Transactional
+    public void calculation(TransactionResponseDto transactionResponseDto, Member member) {
+        List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
+        Long sum = 0L;
+        for (TransactionResponseDto.Detail detail : details) {
+            String tranAmt = detail.getTran_amt();
+            sum += Long.parseLong(tranAmt);
+        }
+        Long diff = member.getTargetSpend() - sum;
+        member.updateFinPoint(member.getFinPoint() + diff);
     }
 
     public String generateBankTranId() {
@@ -67,18 +78,6 @@ public class TokenService {
     public String parseToShortUUID(String uuid) {
         int l = ByteBuffer.wrap(uuid.getBytes()).getInt();
         return Integer.toString(l, LENGTH_9_INT_RADIX);
-    }
-
-    @Transactional
-    public void calculation(TransactionResponseDto transactionResponseDto, Member member) {
-        List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
-        Long sum = 0L;
-        for (TransactionResponseDto.Detail detail : details) {
-            String tranAmt = detail.getTran_amt();
-            sum += Long.parseLong(tranAmt);
-        }
-        Long diff = member.getTargetSpend() - sum;
-        member.updateFinPoint(member.getFinPoint() + diff);
     }
 
     public String getFromDate() {
