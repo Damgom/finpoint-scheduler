@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +24,7 @@ public class TokenService {
 
     private static final int LENGTH_10_INT_RADIX = 10;
     private static final int LENGTH_9_INT_RADIX = 9;
+    private static final String STANDARD_TIME = "235000";
 
     public void getAllToken() {
         List<Token> tokenList = tokenRepository.findAll();
@@ -37,14 +41,14 @@ public class TokenService {
                             accessToken,
                             generateBankTranId(),
                             fin_use_num,
-                            "A",
+                            "O",
                             "T",
-                            "20230604",
-                            "235000",
-                            "20230605",
-                            "235000",
+                            getFromDate(),
+                            STANDARD_TIME,
+                            getToDate(),
+                            STANDARD_TIME,
                             "D",
-                            "20230606235000");
+                            getCurDate());
             calculation(transactionResponseDto, member);
             //todo 계산돼 나온 finpoint 다시 set
         }
@@ -68,19 +72,22 @@ public class TokenService {
         List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
         Long sum = 0L;
         for (TransactionResponseDto.Detail detail : details) {
-            String inoutType = detail.getInout_type();
             String tranAmt = detail.getTran_amt();
-            switch (inoutType) {
-                case "입금" : {
-                    sum += Integer.parseInt(tranAmt);
-                    return;
-                }
-                default: {
-                    sum -= Integer.parseInt(tranAmt);
-                    return;
-                }
-            }
+            sum += Long.parseLong(tranAmt);
         }
         //todo: member field에 finpoint, 일일목표소비금액 추가
+    }
+
+    public String getFromDate() {
+        LocalDateTime yesterday = LocalDateTime.now().minus(Period.ofDays(1));
+        return yesterday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    }
+
+    public String getToDate() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    }
+
+    public String getCurDate() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 }
