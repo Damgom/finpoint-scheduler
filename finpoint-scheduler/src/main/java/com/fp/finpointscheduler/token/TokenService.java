@@ -5,6 +5,7 @@ import com.fp.finpointscheduler.feign.BankingFeign;
 import com.fp.finpointscheduler.member.Member;
 import com.fp.finpointscheduler.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
@@ -27,8 +28,8 @@ public class TokenService {
     private static final String STANDARD_TIME = "235000";
 
     public void getAllToken() {
-        List<Token> tokenList = tokenRepository.findAll();
-        List<Member> memberList = memberRepository.findAll();
+        List<Token> tokenList = tokenRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        List<Member> memberList = memberRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
         for (int i = 0; i < tokenList.size(); i++) {
             Token token = tokenList.get(i);
             Member member = memberList.get(i);
