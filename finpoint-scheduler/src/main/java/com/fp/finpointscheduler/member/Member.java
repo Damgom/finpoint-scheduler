@@ -30,6 +30,9 @@ public class Member {
     private Token token;
 
     private String fintech_use_num;
+
+    private Long finPoint;
+    private Long targetSpend;
     public void assignCode(String code) {
         this.code = code;
     }
@@ -41,5 +44,9 @@ public class Member {
     public void setToken(Token token) {
         this.token = token;
         token.setMember(this);
+    }
+
+    public void updateFinPoint(Long finPoint) {
+        this.finPoint = finPoint;
     }
 }

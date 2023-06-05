@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -36,7 +37,6 @@ public class TokenService {
             String accessToken = token.getToken_type() + " " + token.getAccess_token();
             // 거래내역조회를 위한 필수 parameter fin_use_num
             String fin_use_num = member.getFintech_use_num();
-            // todo: from date, to date, trandtime 현재시간 기준으로 구해서 형식에 맞추는 method 작성
             TransactionResponseDto transactionResponseDto =
                     bankingFeign.getTransaction(
                             accessToken,
@@ -69,6 +69,7 @@ public class TokenService {
         return Integer.toString(l, LENGTH_9_INT_RADIX);
     }
 
+    @Transactional
     public void calculation(TransactionResponseDto transactionResponseDto, Member member) {
         List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
         Long sum = 0L;
@@ -76,7 +77,8 @@ public class TokenService {
             String tranAmt = detail.getTran_amt();
             sum += Long.parseLong(tranAmt);
         }
-        //todo: member field에 finpoint, 일일목표소비금액 추가
+        Long diff = member.getTargetSpend() - sum;
+        member.updateFinPoint(member.getFinPoint() + diff);
     }
 
     public String getFromDate() {
