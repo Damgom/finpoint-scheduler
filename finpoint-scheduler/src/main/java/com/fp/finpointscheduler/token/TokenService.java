@@ -6,6 +6,7 @@ import com.fp.finpointscheduler.member.Member;
 import com.fp.finpointscheduler.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -28,6 +29,7 @@ public class TokenService {
     private static final int LENGTH_9_INT_RADIX = 9;
     private static final String STANDARD_TIME = "235000";
 
+//    @Scheduled(cron = "00 50 23 * * *")
     public void getAllToken() {
         List<Token> tokenList = tokenRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
         List<Member> memberList = memberRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
@@ -91,5 +93,16 @@ public class TokenService {
 
     public String getCurDate() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    public void simpleTest() {
+        System.out.println("==================test for scheduler===========");
+    }
+
+    @Scheduled(cron = "00 40 16 * * *")
+    public void testCron() {
+        System.out.println(LocalDateTime.now());
+        System.out.println("==================cron test=============");
     }
 }
