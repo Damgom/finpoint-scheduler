@@ -67,7 +67,11 @@ public class TokenService {
             sum += Long.parseLong(tranAmt);
         }
         Long diff = member.getTargetSpend() - sum;
-        member.updateFinpoint(member.getFinpoint() + diff);
+        if (member.getFinpoint() == null) {
+            member.updateFinpoint(diff);
+        }else {
+            member.updateFinpoint(member.getFinpoint() + diff);
+        }
         log.info("diff = {}", diff);
         memberRepository.save(member);
     }
