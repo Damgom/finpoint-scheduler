@@ -35,36 +35,49 @@ public class TokenService {
 
 //    @Scheduled(cron = "00 50 23 * * *")
     public void getAllToken() {
-        List<Token> tokenList = tokenRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-        List<Member> memberList = memberRepository.findAll(Sort.by(Sort.Direction.ASC, "memberId"));
-        for (int i = 0; i < tokenList.size(); i++) {
-            Token token = tokenList.get(i);
+        List<Member> memberList = memberRepository.findAll();
+        for (int i = 0; i < memberList.size(); i++) {
             Member member = memberList.get(i);
+            Token token = member.getToken();
             String accessToken = token.getToken_type() + " " + token.getAccess_token();
             // 거래내역조회를 위한 필수 parameter fin_use_num
             String fin_use_num = member.getFintech_use_num();
-            TransactionResponseDto transactionResponseDto =
-                    bankingFeign.getTransaction(
-                            accessToken,
-                            generateBankTranId(),
-                            fin_use_num,
-                            "O",
-                            "T",
-                            "20230501",
-                            "000000",
-                            "20230530",
-                            "000000",
-                            "D",
-                            "20230606000000");
-            log.info("transaction = {}", transactionResponseDto.getBank_name());
-            calculation(transactionResponseDto, member);
+            String from_date = "20230501";
+            String to_date = "20230502";
+            for (int j = 0; j < 30; j++) {
+                TransactionResponseDto transactionResponseDto =
+                        bankingFeign.getTransaction(
+                                accessToken,
+                                generateBankTranId(),
+                                fin_use_num,
+                                "O",
+                                "T",
+                                from_date,
+                                "000000",
+                                to_date,
+                                "000000",
+                                "D",
+                                getCurDate());
+                if (transactionResponseDto.getRes_list() == null) {
+                    continue;
+                }
+                log.info("transaction = {}", transactionResponseDto.getBank_name());
+                calculation(transactionResponseDto, member, from_date);
+                from_date = to_date;
+                int temp = Integer.parseInt(to_date);
+                temp++;
+                to_date = String.valueOf(temp);
+            }
         }
     }
 
-    private void calculation(TransactionResponseDto transactionResponseDto, Member member) {
+    private void calculation(TransactionResponseDto transactionResponseDto, Member member, String from_date) {
         List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
         Long sum = 0L;
         for (TransactionResponseDto.Detail detail : details) {
+            if (!detail.getTran_date().equals(from_date)){
+                continue;
+            }
             String tranAmt = detail.getTran_amt();
             sum += Long.parseLong(tranAmt);
         }
@@ -92,13 +105,12 @@ public class TokenService {
             char randomChar = ALPHANUMERIC.charAt(index);
             sb.append(randomChar);
         }
-        log.info("sb length = {}", sb);
-        String answer = sb.toString();
-        if (tranNum.contains(answer)) {
+        String value = sb.toString();
+        if (tranNum.contains(value)) {
             generateRandomValue();
         }else {
-            tranNum.add(answer);
-            return answer;
+            tranNum.add(value);
+            return value;
         }
         throw new RuntimeException("random value not valid");
     }

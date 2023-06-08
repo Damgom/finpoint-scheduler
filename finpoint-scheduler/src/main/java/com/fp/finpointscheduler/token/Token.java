@@ -24,7 +24,7 @@ public class Token {
     private String refresh_token;
     private String scope;
     private String user_seq_no;
-    @OneToOne(mappedBy = "token", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "token")
     private Member member;
 
     public Token(String access_token, String token_type, String expires_in, String refresh_token, String scope, String user_seq_no) {
