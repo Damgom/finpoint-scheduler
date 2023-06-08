@@ -8,14 +8,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class TokenService {
     @Value("${bank.tran}")
     private String TRAN_ID;
     private static String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final Set<String> tranNum = new HashSet<>();
 
 //    @Scheduled(cron = "00 50 23 * * *")
     public void getAllToken() {
@@ -58,8 +61,7 @@ public class TokenService {
         }
     }
 
-    @Transactional
-    public void calculation(TransactionResponseDto transactionResponseDto, Member member) {
+    private void calculation(TransactionResponseDto transactionResponseDto, Member member) {
         List<TransactionResponseDto.Detail> details = transactionResponseDto.getRes_list();
         Long sum = 0L;
         for (TransactionResponseDto.Detail detail : details) {
@@ -76,12 +78,12 @@ public class TokenService {
         memberRepository.save(member);
     }
 
-    public String generateBankTranId() {
+    private String generateBankTranId() {
         // 10자리 + U + 9자리
         return TRAN_ID + "U" + generateRandomValue();
     }
 
-    public static String generateRandomValue() {
+    private static String generateRandomValue() {
         Random random = new Random();
         StringBuilder sb = new StringBuilder(9);
 
@@ -91,19 +93,31 @@ public class TokenService {
             sb.append(randomChar);
         }
         log.info("sb length = {}", sb);
-        return sb.toString();
+        String answer = sb.toString();
+        if (tranNum.contains(answer)) {
+            generateRandomValue();
+        }else {
+            tranNum.add(answer);
+            return answer;
+        }
+        throw new RuntimeException("random value not valid");
     }
 
-    public String getFromDate() {
+    @Scheduled(cron = "00 00 00 * * *")
+    private void resetSet() {
+        tranNum.clear();
+    }
+
+    private String getFromDate() {
         LocalDateTime yesterday = LocalDateTime.now().minus(Period.ofDays(1));
         return yesterday.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
-    public String getToDate() {
+    private String getToDate() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
-    public String getCurDate() {
+    private String getCurDate() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 }
