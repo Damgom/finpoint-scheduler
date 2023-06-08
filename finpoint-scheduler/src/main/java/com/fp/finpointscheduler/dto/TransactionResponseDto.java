@@ -26,6 +26,7 @@ public class TransactionResponseDto {
     public String balance_amt;
     public String page_record_cnt;
     public String next_page_yn;
+    public String befor_inquiry_trace_info;
     public List<Detail> res_list;
 
     @Data
@@ -39,5 +40,6 @@ public class TransactionResponseDto {
         public String print_content;
         public String tran_amt;
         public String after_balance_amt;
+        public String branch_name;
     }
 }

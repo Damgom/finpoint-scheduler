@@ -5,34 +5,35 @@ import com.fp.finpointscheduler.feign.BankingFeign;
 import com.fp.finpointscheduler.member.Member;
 import com.fp.finpointscheduler.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TokenService {
 
     private final TokenRepository tokenRepository;
     private final MemberRepository memberRepository;
     private final BankingFeign bankingFeign;
-
-    private static final int LENGTH_10_INT_RADIX = 10;
-    private static final int LENGTH_9_INT_RADIX = 9;
     private static final String STANDARD_TIME = "235000";
+    @Value("${bank.tran}")
+    private String TRAN_ID;
+    private static String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 //    @Scheduled(cron = "00 50 23 * * *")
     public void getAllToken() {
         List<Token> tokenList = tokenRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-        List<Member> memberList = memberRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        List<Member> memberList = memberRepository.findAll(Sort.by(Sort.Direction.ASC, "memberId"));
         for (int i = 0; i < tokenList.size(); i++) {
             Token token = tokenList.get(i);
             Member member = memberList.get(i);
@@ -46,12 +47,13 @@ public class TokenService {
                             fin_use_num,
                             "O",
                             "T",
-                            getFromDate(),
-                            STANDARD_TIME,
-                            getToDate(),
-                            STANDARD_TIME,
+                            "20230501",
+                            "000000",
+                            "20230530",
+                            "000000",
                             "D",
-                            getCurDate());
+                            "20230606000000");
+            log.info("transaction = {}", transactionResponseDto.getBank_name());
             calculation(transactionResponseDto, member);
         }
     }
@@ -65,21 +67,27 @@ public class TokenService {
             sum += Long.parseLong(tranAmt);
         }
         Long diff = member.getTargetSpend() - sum;
-        member.updateFinPoint(member.getFinPoint() + diff);
+        member.updateFinpoint(member.getFinpoint() + diff);
+        log.info("diff = {}", diff);
+        memberRepository.save(member);
     }
 
     public String generateBankTranId() {
         // 10자리 + U + 9자리
-        UUID uuid = UUID.randomUUID();
-        return parseToUUID(uuid.toString()) + "U" + parseToShortUUID(uuid.toString());
+        return TRAN_ID + "U" + generateRandomValue();
     }
-    public String parseToUUID(String uuid) {
-        int l = ByteBuffer.wrap(uuid.getBytes()).getInt();
-        return Integer.toString(l, LENGTH_10_INT_RADIX);
-    }
-    public String parseToShortUUID(String uuid) {
-        int l = ByteBuffer.wrap(uuid.getBytes()).getInt();
-        return Integer.toString(l, LENGTH_9_INT_RADIX);
+
+    public static String generateRandomValue() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(9);
+
+        for (int i = 0; i < 9; i++) {
+            int index = random.nextInt(ALPHANUMERIC.length());
+            char randomChar = ALPHANUMERIC.charAt(index);
+            sb.append(randomChar);
+        }
+        log.info("sb length = {}", sb);
+        return sb.toString();
     }
 
     public String getFromDate() {
@@ -93,16 +101,5 @@ public class TokenService {
 
     public String getCurDate() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-    }
-
-    @Scheduled(fixedDelay = 10000)
-    public void simpleTest() {
-        System.out.println("==================test for scheduler===========");
-    }
-
-    @Scheduled(cron = "00 40 16 * * *")
-    public void testCron() {
-        System.out.println(LocalDateTime.now());
-        System.out.println("==================cron test=============");
     }
 }

@@ -7,17 +7,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class Member {
+public class Member extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long memberId;
 
+    @Column(unique = true, nullable = false)
+    @Email
+    @NotBlank
     private String email;
 
     private String password;
@@ -26,14 +33,22 @@ public class Member {
 
     private String code;
 
+    private Long targetSpend;
+
+    private Long finpoint;
+
+    @Enumerated(EnumType.STRING)
+    private OauthClient oauthClient;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    private Set<Role> roles = new HashSet<>();
+
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "token_id")
     private Token token;
 
     private String fintech_use_num;
-
-    private Long finPoint;
-
-    private Long targetSpend;
     public void assignCode(String code) {
         this.code = code;
     }
@@ -44,10 +59,9 @@ public class Member {
 
     public void setToken(Token token) {
         this.token = token;
-        token.setMember(this);
     }
 
-    public void updateFinPoint(Long finPoint) {
-        this.finPoint = finPoint;
+    public void updateFinpoint(Long finpoint) {
+        this.finpoint = finpoint;
     }
 }
