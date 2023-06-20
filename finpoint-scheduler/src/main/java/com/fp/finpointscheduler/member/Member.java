@@ -33,9 +33,9 @@ public class Member extends Auditable {
 
     private String code;
 
-    private Long targetSpend;
+    private Long goal;
 
-    private Long finpoint;
+    private Long finPoint;
 
     @Enumerated(EnumType.STRING)
     private OauthClient oauthClient;
@@ -61,7 +61,7 @@ public class Member extends Auditable {
         this.token = token;
     }
 
-    public void updateFinpoint(Long finpoint) {
-        this.finpoint = finpoint;
+    public void updateFinPoint(Long finPoint) {
+        this.finPoint = finPoint;
     }
 }

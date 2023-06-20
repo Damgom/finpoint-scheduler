@@ -7,7 +7,6 @@ import com.fp.finpointscheduler.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,6 @@ import java.util.Set;
 @Slf4j
 public class TokenService {
 
-    private final TokenRepository tokenRepository;
     private final MemberRepository memberRepository;
     private final BankingFeign bankingFeign;
     private static final String STANDARD_TIME = "235000";
@@ -33,12 +31,17 @@ public class TokenService {
     private static String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final Set<String> tranNum = new HashSet<>();
 
-//    @Scheduled(cron = "00 50 23 * * *")
+    @Scheduled(cron = "00 24 20 * * *")
     public void getAllToken() {
         List<Member> memberList = memberRepository.findAll();
         for (int i = 0; i < memberList.size(); i++) {
             Member member = memberList.get(i);
+            log.info("memberEmail = {}",member.getEmail());
             Token token = member.getToken();
+            if (token == null) {
+                continue;
+            }
+            log.info("token = {}", token.getToken_type());
             String accessToken = token.getToken_type() + " " + token.getAccess_token();
             // 거래내역조회를 위한 필수 parameter fin_use_num
             String fin_use_num = member.getFintech_use_num();
@@ -81,11 +84,11 @@ public class TokenService {
             String tranAmt = detail.getTran_amt();
             sum += Long.parseLong(tranAmt);
         }
-        Long diff = member.getTargetSpend() - sum;
-        if (member.getFinpoint() == null) {
-            member.updateFinpoint(diff);
+        Long diff = member.getGoal() - sum;
+        if (member.getFinPoint() == null) {
+            member.updateFinPoint(diff);
         }else {
-            member.updateFinpoint(member.getFinpoint() + diff);
+            member.updateFinPoint(member.getFinPoint() + diff);
         }
         log.info("diff = {}", diff);
         memberRepository.save(member);
